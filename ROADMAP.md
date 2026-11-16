@@ -7,7 +7,7 @@
 - Time estimate with a "How is this calculated?" breakdown, including station-change costs
 - Shuffle (new workout) and Swap (one exercise, same muscle group, prefers the same kit)
 - Exercise detail: images, instructions, muscles, with a fallback when images are missing
-- [ ] Deployed to GitHub Pages (next step)
+- Deployed to GitHub Pages: https://nathanaog.github.io/worknaogt/
 
 ## ⏭ Phase 2 – My gym
 - Settings screen: edit every number in `config.js` (presets, seconds per rep, change costs)
