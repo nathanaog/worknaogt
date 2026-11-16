@@ -190,3 +190,76 @@ input[type="range"] { width: 100%; height: var(--tap); accent-color: var(--text)
   .ex.just-swapped { animation: pop 0.4s ease-out; }
   @keyframes pop { from { transform: scale(0.97); } to { transform: none; } }
 }
+
+/* ================= Phase 2 additions ================= */
+
+/* Title with the settings button next to it */
+.title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.btn-icon {
+  flex: none; width: var(--tap); height: var(--tap); margin-top: 4px;
+  display: grid; place-items: center; border-radius: 50%;
+  background: var(--raised); border: 2px solid var(--line); color: var(--muted); cursor: pointer;
+}
+
+/* Your own presets get a dashed outline so you can tell them apart */
+.chip-mine { border-style: dashed; }
+
+/* Small buttons: Save as preset, Delete, Cancel */
+.btn-small {
+  min-height: 40px; padding: 0 14px; margin-top: 10px; border-radius: var(--radius-s);
+  border: 2px solid var(--line); background: transparent; font-weight: 700; cursor: pointer;
+}
+.btn-small-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.name-preset { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.name-preset input {
+  flex: 1 1 160px; min-height: 40px; margin-top: 10px; padding: 0 10px;
+  border-radius: var(--radius-s); border: 2px solid var(--line); background: var(--raised); font: inherit; color: var(--text);
+}
+.seg:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ---------- Settings screen ---------- */
+.set-section { margin-bottom: 28px; }
+.set-title { font-size: 1.15rem; font-weight: 800; margin: 0 0 6px; }
+.set-help { color: var(--muted); font-size: 0.85rem; margin: 0 0 10px; display: block; }
+.hint-left { color: var(--muted); font-size: 0.85rem; }
+
+.chip-kit { display: inline-flex; align-items: center; gap: 8px; }
+.chip-kit[aria-pressed="false"] { opacity: 0.5; text-decoration: line-through; }
+
+.table-scroll { overflow-x: auto; margin: 0 -4px; }
+.int-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+.int-table th { color: var(--muted); font-weight: 600; text-align: center; padding: 4px 2px; }
+.int-table tbody th { text-align: left; color: var(--text); font-weight: 700; padding-right: 6px; }
+.int-table td { padding: 3px 2px; text-align: center; }
+.int-table .num { width: 100%; min-width: 3.2em; padding: 0 2px; }
+
+.num {
+  width: 3.4em; min-height: 40px; text-align: center; font: inherit; font-variant-numeric: tabular-nums;
+  background: var(--raised); color: var(--text); border: 2px solid var(--line); border-radius: var(--radius-s);
+}
+.num:focus { border-color: var(--text); }
+.num-row { display: flex; align-items: center; justify-content: space-between; min-height: var(--tap); gap: 12px; }
+.num-wrap { display: inline-flex; align-items: center; gap: 6px; }
+.num-row .num { width: 4.2em; }
+.unit { color: var(--muted); width: 2.2em; font-size: 0.9rem; }
+
+.preview { margin-top: 12px; padding: 12px; background: var(--raised); border-radius: var(--radius-l); font-size: 0.9rem; }
+.preview p { margin: 0 0 10px; }
+.preview p:last-child { margin-bottom: 0; }
+.preview .set-help { margin: 2px 0 0; }
+
+.preset-list { list-style: none; margin: 0; padding: 0; }
+.preset-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+.preset-row .set-help { margin: 0; }
+.preset-row .btn-small { margin-top: 0; }
+
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-file { display: grid; place-items: center; text-align: center; }
+.import-box { margin-top: 12px; padding: 12px; background: var(--raised); border-radius: var(--radius-l); }
+.import-box p { margin: 0 0 10px; }
+.msg-ok { color: var(--st-kettlebell); font-weight: 700; }
+.msg-err { color: var(--st-barbell); font-weight: 700; }
+.btn-text-danger {
+  margin-top: 18px; background: none; border: 0; padding: 0; min-height: var(--tap);
+  color: var(--st-barbell); font-weight: 700; cursor: pointer;
+}

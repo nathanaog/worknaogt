@@ -2,9 +2,10 @@
  *
  * The thinking is all in generator.js and timing.js; this file only
  *  1. keeps track of what you've selected ("state"),
- *  2. draws the three screens from that state,
+ *  2. draws the screens from that state,
  *  3. switches screens using the bit after # in the address bar
- *     (#workout, #exercise) — that way your phone's back button works.
+ *     (#workout, #exercise, #settings) — that way your phone's back button works.
+ * Saving to the phone lives in storage.js; the Settings screen in settings.js.
  */
 (function () {
   const C = Gym.config;
@@ -13,21 +14,43 @@
   const $ = (sel) => document.querySelector(sel);
   const LEGS = ["quads", "hamstrings", "glutes", "calves"];
 
+  // ---------------- Saved data (settings, presets, last options) ----------------
+  let saved = Gym.storage.load();
+  Gym.storage.applyToConfig(saved);
+
+  // Save a new version of the saved data and apply it everywhere.
+  function commit(newData) {
+    saved = newData;
+    Gym.storage.save(saved);
+    Gym.storage.applyToConfig(saved);
+  }
+
   // ---------------- State: everything the user has chosen ----------------
-  const state = Object.assign({
+  // Options start from your last-used values; muscles always start empty.
+  const state = Object.assign({}, C.defaults, saved.last, {
     groups: new Set(),
     workout: null,   // the generated workout
     seed: 0,
     swaps: 0,
     detailId: null,  // which exercise the detail screen shows
     flashId: null,   // highlight the exercise you just swapped in
-  }, C.defaults);
+    naming: false,   // "Save as preset" name box open?
+  });
+
+  function rememberOptions() {
+    const last = {};
+    for (const k of ["durationMin", "intensity", "equipmentMode", "compoundFirst", "minimiseChanges", "warmup", "maxStations"]) {
+      last[k] = state[k];
+    }
+    commit(Object.assign({}, saved, { last }));
+  }
 
   // ---------------- Small helpers ----------------
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const mmss = Gym.timing.mmss;
   const imgUrl = (path) => C.imageBase + path;
   const stationVar = (st) => `--st: var(--st-${st})`;
+  const sameGroups = (list, set) => list.length === set.size && list.every((g) => set.has(g));
 
   function imgTag(ex, i, cls) {
     if (!ex.images || !ex.images[i]) return `<div class="img-missing ${cls || ""}">No image</div>`;
@@ -45,11 +68,19 @@
     }
   }, true);
 
+  // Built-in presets + your own, in one list: [{ key, label, groups, custom }]
+  function allPresets() {
+    const builtIn = Object.entries(C.presets).map(([k, p]) => ({ key: k, label: p.label, groups: p.groups, custom: false }));
+    const mine = saved.presets.map((p) => ({ key: "my:" + p.id, label: p.label, groups: p.groups, custom: true }));
+    return builtIn.concat(mine);
+  }
+
+  // "Chest + Back", or the preset's name if your selection matches a preset.
   function groupsLabel(groups) {
-    const list = [...groups];
-    for (const p of Object.values(C.presets)) {
-      if (p.groups.length === list.length && p.groups.every((g) => groups.has(g))) return p.label;
-    }
+    const match = allPresets().find((p) => sameGroups(p.groups, groups));
+    return match ? match.label : musclesLabel(groups);
+  }
+  function musclesLabel(groups) {
     const parts = [];
     if (LEGS.every((g) => groups.has(g))) parts.push("Legs");
     for (const g of Object.keys(C.groups)) {
@@ -57,24 +88,38 @@
     }
     return parts.join(" + ");
   }
+  Gym.groupsLabelRaw = (groups) => musclesLabel(new Set(groups)); // used by settings.js
+
+  // A kit mode is usable only if your gym has at least one of its kit types.
+  function modeAvailable(mode) {
+    return C.equipmentModes[mode].allow.some((s) => C.gymStations.includes(s));
+  }
 
   // ================= SCREEN 1: build =================
+  function renderPresets() {
+    $("#presets").innerHTML = allPresets().map((p) =>
+      `<button class="chip ${p.custom ? "chip-mine" : ""}" data-preset="${esc(p.key)}" aria-pressed="false">${esc(p.label)}</button>`).join("");
+  }
+
+  // Drawn again whenever Settings change (rep ranges or your gym may differ).
+  function renderOptionButtons() {
+    $("#intensity").innerHTML = Object.entries(C.intensities).map(([k, p]) =>
+      `<button class="seg" role="radio" data-intensity="${k}">${p.label}<small>${p.reps[0]}–${p.reps[1]} reps</small></button>`).join("");
+    $("#equipment").innerHTML = Object.entries(C.equipmentModes).map(([k, m]) =>
+      `<button class="seg ${k === "machines" ? "seg-machines" : ""}" role="radio" data-mode="${k}" ${modeAvailable(k) ? "" : "disabled"}>${m.label}</button>`).join("");
+    if (!modeAvailable(state.equipmentMode)) state.equipmentMode = "any";
+    $("#warmup-label").textContent = `Include ${C.warmupMin} min warm-up`;
+  }
+
   function buildControls() {
-    // Presets
-    $("#presets").innerHTML = Object.entries(C.presets).map(([k, p]) =>
-      `<button class="chip" data-preset="${k}" aria-pressed="false">${p.label}</button>`).join("");
+    renderPresets();
     // Muscle chips (Legs is one chip that controls the 4 leg sub-groups)
     const main = ["chest", "back", "shoulders", "biceps", "triceps", "legs", "core"];
     $("#muscles").innerHTML = main.map((g) =>
       `<button class="chip" data-group="${g}" aria-pressed="false">${g === "legs" ? "Legs" : C.groups[g].label}</button>`).join("");
     $("#leg-subs").innerHTML = LEGS.map((g) =>
       `<button class="chip" data-group="${g}" aria-pressed="false">${C.groups[g].label}</button>`).join("");
-    // Intensity
-    $("#intensity").innerHTML = Object.entries(C.intensities).map(([k, p]) =>
-      `<button class="seg" role="radio" data-intensity="${k}">${p.label}<small>${p.reps[0]}–${p.reps[1]} reps</small></button>`).join("");
-    // Equipment modes
-    $("#equipment").innerHTML = Object.entries(C.equipmentModes).map(([k, m]) =>
-      `<button class="seg ${k === "machines" ? "seg-machines" : ""}" role="radio" data-mode="${k}">${m.label}</button>`).join("");
+    renderOptionButtons();
 
     $("#duration").value = state.durationMin;
     $("#compoundFirst").checked = state.compoundFirst;
@@ -84,10 +129,10 @@
   }
 
   function refreshBuild() {
+    const presets = allPresets();
     document.querySelectorAll("[data-preset]").forEach((b) => {
-      const p = C.presets[b.dataset.preset].groups;
-      const on = p.length === state.groups.size && p.every((g) => state.groups.has(g));
-      b.setAttribute("aria-pressed", on);
+      const p = presets.find((x) => x.key === b.dataset.preset);
+      b.setAttribute("aria-pressed", !!p && sameGroups(p.groups, state.groups));
     });
     document.querySelectorAll("[data-group]").forEach((b) => {
       const g = b.dataset.group;
@@ -103,6 +148,22 @@
     const ready = state.groups.size > 0;
     $("#generate").disabled = !ready;
     $("#build-hint").textContent = ready ? groupsLabel(state.groups) : "Pick a preset or at least one muscle.";
+
+    // "Save as preset" appears only when your selection isn't a preset already.
+    const isPreset = presets.some((p) => sameGroups(p.groups, state.groups));
+    const canSave = ready && !isPreset;
+    if (!canSave) state.naming = false;
+    $("#save-preset").hidden = !canSave || state.naming;
+    $("#name-preset").hidden = !state.naming;
+  }
+
+  function savePreset() {
+    const name = $("#preset-name").value.trim().slice(0, 20) || groupsLabel(state.groups);
+    const preset = { id: Date.now().toString(36), label: name, groups: [...state.groups] };
+    commit(Object.assign({}, saved, { presets: saved.presets.concat(preset) }));
+    state.naming = false;
+    renderPresets();
+    refreshBuild();
   }
 
   function wireBuild() {
@@ -110,7 +171,8 @@
       const b = e.target.closest("button");
       if (!b) return;
       if (b.dataset.preset) {
-        state.groups = new Set(C.presets[b.dataset.preset].groups);
+        const p = allPresets().find((x) => x.key === b.dataset.preset);
+        if (p) state.groups = new Set(p.groups);
       } else if (b.dataset.group === "legs") {
         const anyOn = LEGS.some((g) => state.groups.has(g));
         LEGS.forEach((g) => (anyOn ? state.groups.delete(g) : state.groups.add(g)));
@@ -119,17 +181,33 @@
         state.groups.has(g) ? state.groups.delete(g) : state.groups.add(g);
       } else if (b.dataset.intensity) {
         state.intensity = b.dataset.intensity;
+        rememberOptions();
       } else if (b.dataset.mode) {
         state.equipmentMode = b.dataset.mode;
+        rememberOptions();
+      } else if (b.id === "save-preset") {
+        state.naming = true;
+        refreshBuild();
+        $("#preset-name").value = groupsLabel(state.groups).slice(0, 20);
+        $("#preset-name").focus();
+        $("#preset-name").select();
+        return;
+      } else if (b.id === "preset-save") {
+        savePreset();
+        return;
+      } else if (b.id === "preset-cancel") {
+        state.naming = false;
       }
       refreshBuild();
     });
+    $("#preset-name").addEventListener("keydown", (e) => { if (e.key === "Enter") savePreset(); });
     $("#duration").addEventListener("input", (e) => { state.durationMin = +e.target.value; refreshBuild(); });
-    $("#compoundFirst").addEventListener("change", (e) => (state.compoundFirst = e.target.checked));
-    $("#minimiseChanges").addEventListener("change", (e) => (state.minimiseChanges = e.target.checked));
-    $("#warmup").addEventListener("change", (e) => (state.warmup = e.target.checked));
-    $("#maxStations").addEventListener("change", (e) => (state.maxStations = +e.target.value));
+    $("#duration").addEventListener("change", rememberOptions);
+    const toggle = (id) => $("#" + id).addEventListener("change", (e) => { state[id] = e.target.checked; rememberOptions(); });
+    ["compoundFirst", "minimiseChanges", "warmup"].forEach(toggle);
+    $("#maxStations").addEventListener("change", (e) => { state.maxStations = +e.target.value; rememberOptions(); });
     $("#generate").addEventListener("click", () => generate());
+    $("#open-settings").addEventListener("click", () => go("settings"));
   }
 
   // ================= SCREEN 2: workout =================
@@ -296,12 +374,14 @@
 
   function show() {
     let screen = location.hash.replace("#", "") || "build";
-    if (screen !== "build" && !state.workout) screen = "build"; // e.g. after reloading the page
+    if ((screen === "workout" || screen === "exercise") && !state.workout) screen = "build"; // e.g. after reloading
     if (screen === "exercise" && !BY_ID[state.detailId]) screen = "workout";
     $("#screen-build").hidden = screen !== "build";
     $("#screen-workout").hidden = screen !== "workout";
     $("#screen-detail").hidden = screen !== "exercise";
-    if (screen === "build") refreshBuild();
+    $("#screen-settings").hidden = screen !== "settings";
+    if (screen === "build") { renderPresets(); renderOptionButtons(); refreshBuild(); }
+    if (screen === "settings") settingsUI.render();
     if (screen === "workout") renderWorkout();
     if (screen === "exercise") renderDetail();
     window.scrollTo(0, 0);
@@ -320,6 +400,11 @@
     document.body.innerHTML = "<p style='padding:20px'>Exercise data didn't load. Check that data/exercises.js exists (run tools/build_exercises.py).</p>";
     return;
   }
+  // The Settings screen gets a tiny "API" to read and change the saved data.
+  const settingsUI = Gym.settingsUI({
+    data: () => saved,
+    commit: (d) => commit(d),
+  });
   buildControls();
   wireBuild();
   wireWorkout();

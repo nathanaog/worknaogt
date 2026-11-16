@@ -1,7 +1,8 @@
 /* generator.js — picks and orders the exercises. No UI code in here.
  *
  * The rules, each explainable in one sentence:
- *  1. POOL     Only core exercises that match your chosen muscles and allowed kit.
+ *  1. POOL     Only core exercises that match your chosen muscles, the kit mode, and
+ *              what your gym has (Settings → My gym).
  *  2. FAIR     Each new exercise goes to the chosen group that is furthest below
  *              its fair share (share = group weight, e.g. Back 2.5 vs Biceps 1).
  *  3. COMPOUND A group's first exercise is a compound lift (if "compound first" is on).
@@ -33,7 +34,9 @@ Gym.generator = (function () {
   }
 
   function buildPool(data, opts) {
-    const allowed = new Set(C().equipmentModes[opts.equipmentMode].allow);
+    // Allowed kit = the quick mode (e.g. "Machines only") AND what your gym has (Settings).
+    const gym = new Set(C().gymStations || Object.keys(C().stations));
+    const allowed = new Set(C().equipmentModes[opts.equipmentMode].allow.filter((s) => gym.has(s)));
     const groups = new Set(opts.groups);
     return data.filter((ex) => ex.core && allowed.has(ex.equipment) && groups.has(ex.group));
   }

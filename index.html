@@ -7,15 +7,26 @@
   <meta name="theme-color" content="#1B2028" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#EEF0F2" media="(prefers-color-scheme: light)">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Workout">
-  <title>Workout generator</title>
+  <meta name="apple-mobile-web-app-title" content="Worknao">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- The manifest tells phones "this is an app": name, icon, open without browser bars -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <title>Worknao</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
   <!-- ============ SCREEN 1: Build today's workout ============ -->
   <main id="screen-build" class="screen">
-    <h1 class="title">What are we training?</h1>
+    <div class="title-row">
+      <h1 class="title">What are we training?</h1>
+      <button class="btn-icon" id="open-settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.6 7.6 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.6 7.6 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.6 7.6 0 0 0 1.7 1l.4 2.6h4l.4-2.6a7.6 7.6 0 0 0 1.7-1l2.5 1 2-3.5zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
+      </button>
+    </div>
 
     <section class="field">
       <h2 class="field-label">Presets</h2>
@@ -26,6 +37,12 @@
       <h2 class="field-label">Muscles</h2>
       <div class="chips" id="muscles"></div>
       <div class="chips chips-sub" id="leg-subs" hidden></div>
+      <button class="btn-small" id="save-preset" hidden>Save as preset</button>
+      <div class="name-preset" id="name-preset" hidden>
+        <input type="text" id="preset-name" maxlength="20" aria-label="Preset name" autocomplete="off">
+        <button class="btn-small" id="preset-cancel">Cancel</button>
+        <button class="btn-small btn-small-primary" id="preset-save">Save</button>
+      </div>
     </section>
 
     <section class="field">
@@ -48,7 +65,7 @@
       <label class="toggle"><input type="checkbox" id="minimiseChanges" checked><span>Minimise equipment changes</span></label>
       <details class="more">
         <summary>More options</summary>
-        <label class="toggle"><input type="checkbox" id="warmup" checked><span>Include 5 min warm-up</span></label>
+        <label class="toggle"><input type="checkbox" id="warmup" checked><span id="warmup-label">Include 5 min warm-up</span></label>
         <label class="select-row">Max stations
           <select id="maxStations">
             <option value="0">No limit</option>
@@ -98,12 +115,22 @@
     <p class="credits">Exercise data and images: <a href="https://github.com/yuhonas/free-exercise-db">free-exercise-db</a> (public domain, Unlicense).</p>
   </main>
 
+  <!-- ============ SCREEN 4: Settings ============ -->
+  <main id="screen-settings" class="screen" hidden>
+    <button class="btn-back" data-go="build" aria-label="Back to main screen">‹ Back</button>
+    <h1 class="title">Settings</h1>
+    <div id="settings-body"></div>
+    <p class="credits">Worknao. Exercise data and images: <a href="https://github.com/yuhonas/free-exercise-db">free-exercise-db</a> (public domain, Unlicense).</p>
+  </main>
+
   <!-- Plain scripts, loaded in order (no build step, works by double-click) -->
   <script src="data/exercises.js"></script>
   <script src="js/config.js"></script>
   <script src="js/random.js"></script>
+  <script src="js/storage.js"></script>
   <script src="js/timing.js"></script>
   <script src="js/generator.js"></script>
+  <script src="js/settings.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

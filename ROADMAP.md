@@ -9,14 +9,15 @@
 - Exercise detail: images, instructions, muscles, with a fallback when images are missing
 - Deployed to GitHub Pages: https://nathanaog.github.io/worknaogt/
 
-## ⏭ Phase 2 – My gym
-- Settings screen: edit every number in `config.js` (presets, seconds per rep, change costs)
-- "What my gym has" equipment list, plus per-workout override
-- Remember last selections; save my own presets
-- Everything in localStorage, with JSON export/import
+## ✅ Phase 2 – My gym
+- Installable app: `manifest.json` + icons ("Worknao", opens without browser bars)
+- Settings screen: My gym (kit you have), intensity table, timing numbers, live preview of the maths
+- Save your own presets from the main screen; delete them in Settings
+- Remember last options (time, intensity, kit, toggles); muscles start empty
+- localStorage with versioned data; JSON export/import with a preview before replacing; reset to defaults
 
-## Later – Phase 3: gym mode & offline
-- PWA: manifest + service worker (install to home screen, works with no signal)
+## ⏭ Phase 3: gym mode & offline
+- Service worker: app works with no signal (the manifest/install part was done in Phase 2)
 - Cache exercise images as they're viewed
 - Follow-along view: current exercise, tick off sets, rest timer
 
